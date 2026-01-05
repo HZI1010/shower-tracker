@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shower Reminder</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <main class="app-container">
+        <header>
+            <h1>Shower Reminder</h1>
+            <p id="status-text">Checking status...</p>
+        </header>
+
+        <section class="main-card glass">
+            <div class="status-indicator" id="status-orb"></div>
+            <div class="timer-display">
+                <span id="time-since">--:--:--</span>
+                <label>Since last shower</label>
+            </div>
+
+            <button id="shower-btn" class="primary-btn">
+                <span class="btn-icon">🚿</span>
+                I Showered Today
+            </button>
+        </section>
+
+        <section class="settings-card glass">
+            <h2>Reminders</h2>
+            <div class="setting-item">
+                <span>Enable Notifications</span>
+                <label class="switch">
+                    <input type="checkbox" id="notif-toggle">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <span>Remind me after</span>
+                <select id="interval-select">
+                    <option value="12">12 Hours</option>
+                    <option value="24" selected>24 Hours</option>
+                    <option value="48">48 Hours</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="history-card glass">
+            <div class="card-header">
+                <h2>Recent History</h2>
+                <button id="reset-btn" class="text-btn">Reset</button>
+            </div>
+            <ul id="history-list">
+                <li class="empty-msg">No history yet</li>
+            </ul>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
