@@ -38,7 +38,7 @@
         </section>
 
         <section class="settings-card glass">
-            <h2>Reminders</h2>
+            <h2>Interval Reminders</h2>
             <div class="setting-item">
                 <span>Enable Notifications</span>
                 <label class="switch">
@@ -54,6 +54,19 @@
                     <option value="48">48 Hours</option>
                 </select>
             </div>
+        </section>
+
+        <section class="alarms-card glass">
+            <div class="card-header">
+                <h2>Daily Alarms</h2>
+            </div>
+            <div class="alarm-input-group">
+                <input type="time" id="alarm-time">
+                <button id="add-alarm-btn" class="accent-btn">+</button>
+            </div>
+            <ul id="alarms-list" class="alarms-list">
+                <!-- Alarms will be injected here -->
+            </ul>
         </section>
 
         <section class="history-card glass">

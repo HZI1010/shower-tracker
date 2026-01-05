@@ -3,7 +3,8 @@ let showerData = JSON.parse(localStorage.getItem('showerData')) || {
     lastShower: null,
     history: [],
     notificationsEnabled: false,
-    interval: 24
+    interval: 24,
+    alarms: [] // New: Daily Alarms
 };
 
 // DOM Elements
@@ -16,6 +17,11 @@ const intervalSelect = document.getElementById('interval-select');
 const historyList = document.getElementById('history-list');
 const resetBtn = document.getElementById('reset-btn');
 
+// New DOM Elements for Alarms
+const alarmInput = document.getElementById('alarm-time');
+const addAlarmBtn = document.getElementById('add-alarm-btn');
+const alarmsList = document.getElementById('alarms-list');
+
 // Initialize
 function init() {
     updateUI();
@@ -24,12 +30,17 @@ function init() {
     notifToggle.checked = showerData.notificationsEnabled;
     intervalSelect.value = showerData.interval;
 
+    // Render alarms list
+    renderAlarms();
+
     // Start timer update loop
     setInterval(updateTimer, 1000);
 }
 
 // Update the "time since" display
 function updateTimer() {
+    checkForAlarms(); // Check if any alarm should trigger
+
     if (!showerData.lastShower) return;
 
     const last = new Date(showerData.lastShower);
@@ -59,7 +70,31 @@ function updateTimer() {
 
         // Trigger notification if enabled and not already sent for this cycle
         if (showerData.notificationsEnabled) {
-            sendNotification();
+            sendNotification("Interval Reminder", "It's been a while since your last shower. Time to get fresh!");
+        }
+    }
+}
+
+// Check for Alarm Triggers
+function checkForAlarms() {
+    if (!showerData.notificationsEnabled || showerData.alarms.length === 0) return;
+
+    const now = new Date();
+    const currentTimeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+    // Only trigger once per minute
+    const lastAlarmMinute = localStorage.getItem('lastAlarmMinute');
+    if (lastAlarmMinute === currentTimeStr) return;
+
+    const activeAlarm = showerData.alarms.find(a => a.time === currentTimeStr);
+    if (activeAlarm) {
+        // Only trigger if we haven't showered in the last 12 hours (to avoid double notifications)
+        const lastShowerTime = showerData.lastShower ? new Date(showerData.lastShower) : new Date(0);
+        const hoursSinceShower = (now - lastShowerTime) / (1000 * 60 * 60);
+
+        if (hoursSinceShower > 12) {
+            sendNotification("Daily Alarm", `It's ${currentTimeStr}! Time for your scheduled shower.`);
+            localStorage.setItem('lastAlarmMinute', currentTimeStr);
         }
     }
 }
@@ -91,6 +126,44 @@ showerBtn.addEventListener('click', () => {
     setTimeout(() => showerBtn.style.transform = 'scale(1)', 100);
 });
 
+// Alarm Event Listeners
+addAlarmBtn.addEventListener('click', () => {
+    const time = alarmInput.value;
+    if (!time) return;
+
+    if (showerData.alarms.find(a => a.time === time)) {
+        alert("This alarm time already exists.");
+        return;
+    }
+
+    showerData.alarms.push({ time, id: Date.now() });
+    showerData.alarms.sort((a, b) => a.time.localeCompare(b.time));
+
+    saveData();
+    renderAlarms();
+});
+
+function deleteAlarm(id) {
+    showerData.alarms = showerData.alarms.filter(a => a.id !== id);
+    saveData();
+    renderAlarms();
+}
+
+function renderAlarms() {
+    if (!alarmsList) return;
+    if (showerData.alarms.length === 0) {
+        alarmsList.innerHTML = '<li class="empty-msg">No alarms set</li>';
+        return;
+    }
+
+    alarmsList.innerHTML = showerData.alarms.map(alarm => `
+        <li class="alarm-item">
+            <span class="alarm-info">${alarm.time}</span>
+            <button class="del-btn" onclick="deleteAlarm(${alarm.id})">×</button>
+        </li>
+    `).join('');
+}
+
 // Toggle Notifications
 notifToggle.addEventListener('change', (e) => {
     showerData.notificationsEnabled = e.target.checked;
@@ -114,8 +187,10 @@ resetBtn.addEventListener('click', () => {
     if (confirm("Are you sure you want to reset your shower history? This cannot be undone.")) {
         showerData.lastShower = null;
         showerData.history = [];
+        showerData.alarms = [];
         saveData();
         updateUI();
+        renderAlarms();
 
         // Reset timer display
         timeDisplay.textContent = '--:--:--';
@@ -145,21 +220,22 @@ async function requestNotificationPermission() {
 }
 
 // Send Notification
-function sendNotification() {
+function sendNotification(title, body) {
     if (!("Notification" in window) || Notification.permission !== "granted") return;
 
-    // Check if we already notified in the last hour to prevent spam
-    const lastNotified = localStorage.getItem('lastNotified');
-    const now = Date.now();
+    // Check if we already notified in the last hour for intervals (prevents spam)
+    // Alarms have their own minute-based check
+    if (title === "Interval Reminder") {
+        const lastNotified = localStorage.getItem('lastNotified');
+        const now = Date.now();
+        if (lastNotified && (now - lastNotified < 3600000)) return;
+        localStorage.setItem('lastNotified', now);
+    }
 
-    if (lastNotified && (now - lastNotified < 3600000)) return;
-
-    new Notification("Shower Reminder", {
-        body: "It's been a while since your last shower. Time to get fresh!",
+    new Notification(title, {
+        body: body,
         icon: "https://cdn-icons-png.flaticon.com/512/3100/3100824.png"
     });
-
-    localStorage.setItem('lastNotified', now);
 }
 
 // Save to LocalStorage
